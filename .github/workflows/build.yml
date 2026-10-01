@@ -1,0 +1,41 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Files ko sahi folder mein rakho
+        shell: bash
+        run: |
+          if [ ! -f app/build.gradle ]; then
+            mkdir -p app/src/main/java/shop/kwix/app app/src/main/res/values
+            for f in *.gradle; do
+              if grep -q "namespace" "$f"; then mv "$f" /tmp/app.gradle
+              elif grep -q "include" "$f"; then mv "$f" /tmp/settings.gradle
+              else mv "$f" /tmp/root.gradle; fi
+            done
+            mv /tmp/app.gradle app/build.gradle
+            mv /tmp/settings.gradle settings.gradle
+            mv /tmp/root.gradle build.gradle
+            mv AndroidManifest.xml app/src/main/
+            mv MainActivity.java app/src/main/java/shop/kwix/app/
+            mv strings.xml themes.xml app/src/main/res/values/
+            ICON=$(ls -S ic_launcher*.png | head -1)
+            for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+              mkdir -p app/src/main/res/mipmap-$d
+              cp "$ICON" app/src/main/res/mipmap-$d/ic_launcher.png
+            done
+          fi
+          find app -type f
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.7' }
+      - run: gradle assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kwix-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
