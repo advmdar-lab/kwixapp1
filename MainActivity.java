@@ -23,13 +23,13 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 /**
- * Kwix: the kwix.shop website inside a simple Android app.
+ * mb2b.in: the mb2b.in website inside a simple Android app.
  * Opens the home page (buyers and sellers), keeps the login, lets sellers pick or take photos,
  * and sends WhatsApp, phone and UPI links to the right apps.
  */
 public class MainActivity extends Activity {
 
-    private static final String SITE = BuildConfig.SITE;
+    private static final String SITE = "https://mb2b.in";
     private static final String START = SITE + "/";
     private static final int PICK = 41;
 
@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
         try {
             ContentValues cv = new ContentValues();
             cv.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-            cv.put(MediaStore.Images.Media.DISPLAY_NAME, "kwix_" + System.currentTimeMillis() + ".jpg");
+            cv.put(MediaStore.Images.Media.DISPLAY_NAME, "mb2b_" + System.currentTimeMillis() + ".jpg");
             cameraUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
             if (cameraUri == null) return null;
             Intent cam = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -165,7 +165,7 @@ public class MainActivity extends Activity {
     private boolean isOurs(Uri u) {
         String h = u.getHost();
         return ("https".equals(u.getScheme()) || "http".equals(u.getScheme()))
-                && h != null && (h.equals("kwix.shop") || h.endsWith(".kwix.shop"));
+                && h != null && (h.equals("mb2b.in") || h.endsWith(".mb2b.in") || h.equals("kwix.shop") || h.endsWith(".kwix.shop"));
     }
 
     /** true = we handled it outside the app. */
@@ -186,9 +186,9 @@ public class MainActivity extends Activity {
     private String offlinePage() {
         return "<html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>"
                 + "<body style='font-family:sans-serif;text-align:center;padding:60px 24px;color:#1c2433'>"
-                + "<h1 style='color:#1b4ddb'>kwix</h1><p><b>No internet connection</b></p>"
+                + "<h1 style='color:#16307a'>mb<span style='color:#e8a400'>2</span>b.in</h1><p><b>No internet connection</b></p>"
                 + "<p>Check mobile data or Wi-Fi.</p>"
-                + "<a href='" + START + "' style='display:inline-block;margin-top:14px;padding:12px 22px;background:#1b4ddb;color:#fff;"
+                + "<a href='" + START + "' style='display:inline-block;margin-top:14px;padding:12px 22px;background:#16307a;color:#fff;"
                 + "border-radius:10px;text-decoration:none'>Try again</a></body></html>";
     }
 

@@ -31,13 +31,13 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Kwix links shared on WhatsApp can open straight in the app. -->
+            <!-- mb2b.in links shared on WhatsApp can open straight in the app. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="kwix.shop" />
-                <data android:scheme="https" android:host="www.kwix.shop" />
+                <data android:scheme="https" android:host="mb2b.in" />
+                <data android:scheme="https" android:host="www.mb2b.in" />
             </intent-filter>
         </activity>
     </application>
