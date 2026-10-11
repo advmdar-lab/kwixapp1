@@ -1,32 +1,27 @@
-KWIX — Android ऐप (सबके लिए: खरीदार और सेलर दोनों)
-====================================================
-यह ऐप पूरी kwix.shop वेबसाइट को ऐप के रूप में खोलता है — होम पेज से।
-खरीदार गाड़ियाँ देख सकते हैं, WhatsApp/Call दबा सकते हैं; सेलर लॉगिन करके
-अपना डैशबोर्ड चला सकते हैं। लॉगिन याद रहता है, फ़ोटो गैलरी/कैमरा से डाल सकते हैं।
-वेबसाइट में जो बदलेगा, ऐप में अपने-आप दिखेगा — ऐप दोबारा बनाने की ज़रूरत नहीं।
+MB2B - Android app (for buyers and sellers)
+===========================================
+The app opens the mb2b.in website as an app, from the home page.
+Buyers can see the ads, Call and Chat; sellers log in and run their shop.
+The login is remembered, and photos can come from the gallery or the camera.
+Whatever changes on the website shows in the app by itself; the app does not need to be built again for that.
 
-ऐप का नाम: Kwix      पैकेज: shop.kwix.app
-(पुराना "Kwix Seller" ऐप अलग है — दोनों एक फ़ोन में साथ रह सकते हैं।)
+Version 2 (October 2026):
+- The app is called MB2B.
+- The MB2B bar stays in the phone's notification panel, with Inbox, Buy Leads (or Saved) and Search buttons
+  and the number of new messages.
+- Every 15 minutes (when Android allows) the app checks mb2b.in for new messages and shows a notification.
 
-APK बनाने के तीन तरीके (कोई एक चुनें)
--------------------------------------
-तरीका 1 — GitHub (कुछ इंस्टॉल नहीं करना):
-  1. github.com पर नया repository बनाएँ, इस फ़ोल्डर की सारी फ़ाइलें अपलोड करें
-     (.github फ़ोल्डर भी)।
-  2. Actions टैब → "Build APK" → Run workflow।
-  3. 5-10 मिनट बाद रन खोलें → नीचे "kwix-apk" डाउनलोड करें।
+App name: MB2B      Package: shop.kwix.app (kept, so Android knows it is the same app)
 
-तरीका 2 — Android Studio (कंप्यूटर पर):
-  1. developer.android.com/studio से Android Studio इंस्टॉल करें।
-  2. यह ज़िप एक्सट्रैक्ट करें → Android Studio → Open → यह फ़ोल्डर चुनें।
-  3. "Gradle sync" पूरा होने दें (पहली बार 10-20 मिनट)।
-  4. Build → Build App Bundle(s) / APK(s) → Build APK(s) → locate → app-debug.apk
+Build the APK on GitHub (nothing to install)
+--------------------------------------------
+1. Upload all the files of this folder to the GitHub repository (the .github folder too).
+2. GitHub builds by itself after the upload. Or: Actions tab -> "Build APK" -> Run workflow.
+3. After 5-10 minutes open the finished run -> at the bottom download "mb2b-apk" (a .zip with app-debug.apk inside).
+4. Rename app-debug.apk to mb2b.apk and upload it to public_html on Hostinger.
+   The "Download app" buttons on mb2b.in then give this new app.
 
-तरीका 3 — सबसे आसान (ज़िप की ज़रूरत भी नहीं):
-  pwabuilder.com खोलें → kwix.shop डालें → Package for stores → Android →
-  APK डाउनलोड करें।
-
-फ़ोन में इंस्टॉल
----------------
-APK फ़ाइल खोलें → "Install unknown apps" की अनुमति दें → Install।
-(Play Store से बाहर का ऐप है, इसलिए Android चेतावनी दिखाएगा — यह सामान्य है।)
+Install on a phone
+------------------
+Open the APK file -> allow "Install unknown apps" -> Install.
+If the phone has the old app, uninstall the old one first (each GitHub build has a new signature).
