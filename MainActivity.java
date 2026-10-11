@@ -25,10 +25,16 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.Icon;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.CookieManager;
@@ -44,6 +50,11 @@ import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
+
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -51,6 +62,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * MB2B: the mb2b.in website inside a simple Android app.
@@ -58,6 +71,8 @@ import java.nio.charset.StandardCharsets;
  * and sends phone and UPI links to the right apps.
  * Version 2: the MB2B bar that stays in the phone's notification panel (Inbox, Buy Leads, Search),
  * the number of new messages on it, and a notification when new messages come (checked every 15 minutes).
+ * Version 3: instant notifications from mb2b.in (Firebase), and the phone says out loud when a new inquiry comes
+ * ("MB2B par naya inquiry aaya hai, aap check kijiye"). It can be turned off in Account.
  */
 public class MainActivity extends Activity {
 
@@ -98,7 +113,7 @@ public class MainActivity extends Activity {
         s.setUseWideViewPort(true);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setSupportMultipleWindows(false);
-        s.setUserAgentString(s.getUserAgentString() + " MB2BApp/2.0");
+        s.setUserAgentString(s.getUserAgentString() + " MB2BApp/3.0");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         // The page tells the app how many messages are new (for the MB2B bar).
@@ -171,6 +186,21 @@ public class MainActivity extends Activity {
         }
         showBar(this);
         Poll.schedule(this);
+        fetchToken();   // version 3: instant notifications
+    }
+
+    /** The Firebase code of this phone. The page sends it to mb2b.in (window.MB2BApp.pushToken). */
+    private void fetchToken() {
+        try {
+            if (FirebaseApp.getApps(this).isEmpty() && FirebaseApp.initializeApp(this) == null) return;   // built without google-services.json
+            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(t -> {
+                try {
+                    if (!t.isSuccessful() || t.getResult() == null) return;
+                    prefs(this).edit().putString("fcm", t.getResult()).apply();
+                    if (web != null) web.post(() -> web.evaluateJavascript("window.appSync&&appSync()", null));
+                } catch (Throwable ignored) { }
+            });
+        } catch (Throwable ignored) { }   // never stop the app because of notifications
     }
 
     @Override
@@ -228,7 +258,7 @@ public class MainActivity extends Activity {
         fileCallback = null;
     }
 
-    private static boolean isOurs(Uri u) {
+    static boolean isOurs(Uri u) {
         String h = u.getHost();
         return ("https".equals(u.getScheme()) || "http".equals(u.getScheme()))
                 && h != null && (h.equals("mb2b.in") || h.endsWith(".mb2b.in"));
@@ -433,6 +463,119 @@ public class MainActivity extends Activity {
                 showBar(ctx);
             } catch (Throwable ignored) { }
         }
+
+        /** Version 3: this phone's Firebase code ("" until Firebase is set up). */
+        @JavascriptInterface
+        public String pushToken() { return prefs(ctx).getString("fcm", ""); }
+
+        /** Version 3: the phone says out loud when a new inquiry comes (on unless the user turns it off). */
+        @JavascriptInterface
+        public boolean speakOn() { return prefs(ctx).getBoolean("speak", true); }
+
+        @JavascriptInterface
+        public void setSpeak(boolean on) {
+            prefs(ctx).edit().putBoolean("speak", on).apply();
+            if (on) say(ctx, "test", 0);
+        }
+    }
+
+    /* ---------------- version 3: instant notifications and the spoken alert ---------------- */
+
+    /** What the phone says. Hindi when the phone has a Hindi voice, otherwise English. */
+    static String[] words(String kind) {
+        switch (kind == null ? "" : kind) {
+            case "inq": return new String[]{"एम बी टू बी पर नया इंक्वायरी आया है। आप चेक कीजिए।", "New inquiry on M B 2 B. Please check."};
+            case "lead": return new String[]{"एम बी टू बी पर नया बायर लीड आया है। आप चेक कीजिए।", "New buyer lead on M B 2 B. Please check."};
+            case "msg": return new String[]{"एम बी टू बी पर नया मैसेज आया है।", "New message on M B 2 B."};
+            case "test": return new String[]{"एम बी टू बी की आवाज़ चालू है।", "M B 2 B voice alerts are on."};
+            default: return null;
+        }
+    }
+
+    /** Says it out loud, after the notification sound. Silent when the phone is on silent, vibrate or Do Not Disturb. */
+    static void say(Context ctx, String kind, long delayMs) {
+        final String[] w = words(kind);
+        if (w == null) return;
+        final Context app = ctx.getApplicationContext();
+        try {
+            AudioManager am = (AudioManager) app.getSystemService(Context.AUDIO_SERVICE);
+            if (am != null && am.getRingerMode() != AudioManager.RINGER_MODE_NORMAL) return;
+            NotificationManager nm = (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null && Build.VERSION.SDK_INT >= 23 && nm.getCurrentInterruptionFilter() > NotificationManager.INTERRUPTION_FILTER_ALL) return;
+        } catch (Throwable ignored) { }
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            try {
+                final TextToSpeech[] h = new TextToSpeech[1];
+                h[0] = new TextToSpeech(app, st -> {
+                    TextToSpeech t = h[0];
+                    try {
+                        if (st != TextToSpeech.SUCCESS || t == null) { if (t != null) t.shutdown(); return; }
+                        Locale hi = new Locale("hi", "IN");
+                        boolean hindi = t.isLanguageAvailable(hi) >= TextToSpeech.LANG_AVAILABLE;
+                        t.setLanguage(hindi ? hi : new Locale("en", "IN"));
+                        t.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build());
+                        t.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                            @Override public void onStart(String id) { }
+                            @Override public void onDone(String id) { t.shutdown(); }
+                            @SuppressWarnings("deprecation") @Override public void onError(String id) { t.shutdown(); }
+                        });
+                        if (t.speak(hindi ? w[0] : w[1], TextToSpeech.QUEUE_FLUSH, null, "mb2b") != TextToSpeech.SUCCESS) t.shutdown();
+                    } catch (Throwable e) { try { if (t != null) t.shutdown(); } catch (Throwable ignored) { } }
+                });
+            } catch (Throwable ignored) { }
+        }, delayMs);
+    }
+
+    /** One notification from mb2b.in (title, text, the page it opens). Each inquiry or chat gets its own. */
+    static void notifyPush(Context ctx, String title, String body, String url) {
+        try {
+            NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm == null || !canNotify(ctx)) return;
+            channels(nm);
+            Uri u = url == null ? null : Uri.parse(url);
+            String path = u != null && isOurs(u) ? (u.getEncodedPath() == null ? "/" : u.getEncodedPath()) + (u.getEncodedQuery() == null ? "" : "?" + u.getEncodedQuery()) : "/";
+            int id = 100 + Math.abs(path.hashCode() % 100000);
+            String text = body == null ? "" : body;
+            Notification.Builder b = builder(ctx, CH_MSG)
+                    .setSmallIcon(smallIcon())
+                    .setContentTitle(title == null || title.isEmpty() ? "MB2B" : title)
+                    .setContentText(text)
+                    .setStyle(new Notification.BigTextStyle().bigText(text))
+                    .setContentIntent(open(ctx, path, id))
+                    .setAutoCancel(true)
+                    .setColor(0xFF16307A)
+                    .setCategory(Notification.CATEGORY_MESSAGE);
+            Bitmap lg = logo(ctx);
+            if (lg != null) b.setLargeIcon(lg);
+            if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_HIGH).setDefaults(Notification.DEFAULT_ALL);
+            nm.notify(id, b.build());
+        } catch (Throwable ignored) { }
+    }
+
+    /** Firebase brings each notification from mb2b.in at once, even when the app is closed. */
+    public static class Fcm extends FirebaseMessagingService {
+        @Override
+        public void onNewToken(String token) {
+            try { prefs(this).edit().putString("fcm", token).apply(); } catch (Throwable ignored) { }
+        }
+
+        @Override
+        public void onMessageReceived(RemoteMessage m) {
+            try {
+                Context ctx = getApplicationContext();
+                Map<String, String> d = m.getData();
+                String kind = d.get("kind");
+                notifyPush(ctx, d.get("title"), d.get("body"), d.get("url"));
+                SharedPreferences p = prefs(ctx);
+                SharedPreferences.Editor e = p.edit().putLong("fcm_at", System.currentTimeMillis());
+                if ("lead".equals(kind)) e.putInt("leads", p.getInt("leads", 0) + 1);
+                else if ("inq".equals(kind) || "msg".equals(kind)) e.putInt("unread", p.getInt("unread", 0) + 1).putInt("seen", p.getInt("seen", 0) + 1);   // the 15-minute check does not tell again
+                e.apply();
+                showBar(ctx);
+                if (p.getBoolean("speak", true)) say(ctx, kind, 1500);
+            } catch (Throwable ignored) { }
+        }
     }
 
     /** Every 15 minutes (when Android allows): asks mb2b.in how many messages are new, updates the bar, tells about new ones. */
@@ -470,7 +613,7 @@ public class MainActivity extends Activity {
             c.setConnectTimeout(15000);
             c.setReadTimeout(15000);
             c.setRequestProperty("Cookie", ck);
-            c.setRequestProperty("User-Agent", "MB2BApp/2.0");
+            c.setRequestProperty("User-Agent", "MB2BApp/3.0");
             try {
                 if (c.getResponseCode() != 200) return;
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -491,7 +634,8 @@ public class MainActivity extends Activity {
                 int seen = p.getInt("seen", 0);
                 p.edit().putInt("unread", msgs).putInt("leads", leads).putString("role", role).putInt("seen", msgs).apply();
                 showBar(ctx);
-                if (msgs > seen) notifyNew(ctx, msgs, role);
+                boolean live = System.currentTimeMillis() - p.getLong("fcm_at", 0) < 3L * 24 * 3600 * 1000;   // version 3: Firebase works on this phone
+                if (msgs > seen && !live) notifyNew(ctx, msgs, role);
             } finally {
                 c.disconnect();
             }

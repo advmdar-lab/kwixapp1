@@ -23,6 +23,9 @@ jobs:
             mv AndroidManifest.xml app/src/main/
             mv MainActivity.java app/src/main/java/shop/kwix/app/
             mv strings.xml themes.xml app/src/main/res/values/
+            # Version 3: the Firebase file (instant notifications). Without it the app still builds, with the 15-minute check only.
+            GS=$(ls google-services*.json 2>/dev/null | head -1)
+            if [ -n "$GS" ]; then mv "$GS" app/google-services.json; else echo "No google-services.json: built without instant notifications"; fi
             ICON=$(ls -S ic_launcher*.png | head -1)
             for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
               mkdir -p app/src/main/res/mipmap-$d

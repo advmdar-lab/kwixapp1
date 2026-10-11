@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Only needed on Android 9 and older, to save a photo taken with the camera. -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
-    <!-- Version 2: the MB2B bar in the notification panel, and new-message notifications. -->
+    <!-- Version 2: the MB2B bar in the notification panel, and new-message notifications. Version 3: instant ones, spoken. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- The bar and the 15-minute message check come back after the phone restarts. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -49,6 +49,14 @@
             android:name=".MainActivity$Poll"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false" />
+        <!-- Version 3: instant notifications from mb2b.in (Firebase Cloud Messaging). -->
+        <service
+            android:name=".MainActivity$Fcm"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <!-- Puts the MB2B bar back after a restart or an app update. -->
         <receiver
             android:name=".MainActivity$Boot"

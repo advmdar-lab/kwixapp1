@@ -1,6 +1,10 @@
 plugins {
     id 'com.android.application'
 }
+// Version 3: Firebase (instant notifications) is switched on only when google-services.json is uploaded with the files.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
 
 android {
     namespace 'shop.kwix.app'
@@ -10,8 +14,8 @@ android {
         applicationId "shop.kwix.app"
         minSdk 24
         targetSdk 34
-        versionCode 2
-        versionName "2.0"
+        versionCode 3
+        versionName "3.0"
         // Change the website address here if it ever changes.
         buildConfigField "String", "SITE", "\"https://mb2b.in\""
     }
@@ -25,4 +29,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.5.1')
+    implementation 'com.google.firebase:firebase-messaging'
 }

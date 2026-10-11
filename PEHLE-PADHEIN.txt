@@ -5,23 +5,41 @@ Buyers can see the ads, Call and Chat; sellers log in and run their shop.
 The login is remembered, and photos can come from the gallery or the camera.
 Whatever changes on the website shows in the app by itself; the app does not need to be built again for that.
 
-Version 2 (October 2026):
-- The app is called MB2B.
-- The MB2B bar stays in the phone's notification panel, with Inbox, Buy Leads (or Saved) and Search buttons
-  and the number of new messages.
-- Every 15 minutes (when Android allows) the app checks mb2b.in for new messages and shows a notification.
+Version 3 (October 2026):
+- Instant notifications from mb2b.in (Google Firebase), even when the app is closed:
+  a new inquiry, a new buyer lead, a new chat message. Each one opens the right page when tapped.
+- The phone also says it out loud after the notification sound, for example
+  "MB2B par naya inquiry aaya hai. Aap check kijiye." (Hindi when the phone has a Hindi voice, otherwise English).
+  It stays quiet when the phone is on silent, vibrate or Do Not Disturb.
+  Turn it on or off in the app: Account -> "Speak new inquiries aloud".
+- The 15-minute check stays as a back-up.
+
+Version 2: the MB2B name, the MB2B bar in the notification panel (Inbox, Buy Leads or Saved, Search).
 
 App name: MB2B      Package: shop.kwix.app (kept, so Android knows it is the same app)
 
-Build the APK on GitHub (nothing to install)
---------------------------------------------
-1. Upload all the files of this folder to the GitHub repository (the .github folder too).
+Step 1 - get the Firebase file for the app (laptop, about 3 minutes)
+---------------------------------------------------------------------
+1. Open console.firebase.google.com and open the project "mb2b".
+2. Click "+ Add app" and choose the Android icon (the little green robot).
+3. Android package name: shop.kwix.app   (type it exactly like this)
+   App nickname: MB2B app. Leave the SHA-1 box empty. Click "Register app".
+4. Click "Download google-services.json". The file goes to the laptop's Downloads folder.
+5. Click Next, Next, then "Continue to console". (Skip the other steps on that page.)
+
+Step 2 - build the APK on GitHub (nothing to install)
+-----------------------------------------------------
+1. Upload all the files of this folder to the GitHub repository (the .github folder too),
+   AND the google-services.json file from Step 1.
 2. GitHub builds by itself after the upload. Or: Actions tab -> "Build APK" -> Run workflow.
 3. After 5-10 minutes open the finished run -> at the bottom download "mb2b-apk" (a .zip with app-debug.apk inside).
-4. Rename app-debug.apk to mb2b.apk and upload it to public_html on Hostinger.
+4. Rename app-debug.apk to mb2b.apk and upload it to public_html on Hostinger (Replace the old one).
    The "Download app" buttons on mb2b.in then give this new app.
+Without google-services.json the app still builds, but only with the 15-minute check.
 
 Install on a phone
 ------------------
+Uninstall the old app first (each GitHub build has a new signature).
 Open the APK file -> allow "Install unknown apps" -> Install.
-If the phone has the old app, uninstall the old one first (each GitHub build has a new signature).
+Open the app -> Allow notifications -> log in. The phone is then signed up for instant notifications by itself.
+The website must be on v49 or newer for this.
