@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "260547219810",
+    "project_id": "mb2b-e0b58",
+    "storage_bucket": "mb2b-e0b58.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:260547219810:android:c423fade117409fef51c3b",
+        "android_client_info": {
+          "package_name": "shop.kwix.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHa6A71FT30yUpoFwwVhRsZuD80UyKBl0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
