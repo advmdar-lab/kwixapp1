@@ -29,6 +29,12 @@ jobs:
               cp "$ICON" app/src/main/res/mipmap-$d/ic_launcher.png
             done
           fi
+          if ls google-services*.json >/dev/null 2>&1; then
+            mv $(ls google-services*.json | head -1) app/google-services.json
+            echo "google-services.json app folder mein daal diya"
+          else
+            echo "No google-services.json: built without instant notifications"
+          fi
           find app -type f
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
